@@ -15,8 +15,8 @@ def divide_frames_to_folders(input_folder, output_folder, n_frames_per_folder):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    frame_files += sorted(glob.glob(os.path.join(input_folder, '*.png')))
-    frame_files = sorted(glob.glob(os.path.join(input_folder, '*.jpg')))
+    frame_files = sorted(glob.glob(os.path.join(input_folder, '*.png')))
+    frame_files += sorted(glob.glob(os.path.join(input_folder, '*.jpg')))
     frame_files += sorted(glob.glob(os.path.join(input_folder, '*.jpeg')))
 
     logging.info(f'Found {len(frame_files)} frames in {input_folder}')
@@ -28,6 +28,7 @@ def divide_frames_to_folders(input_folder, output_folder, n_frames_per_folder):
 
         for frame_file in frame_files[i:i + n_frames_per_folder]:
             shutil.copy2(frame_file, os.path.join(folder_name, os.path.basename(frame_file)))
+        # break
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Divide frames into folders.')
@@ -38,4 +39,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     divide_frames_to_folders(args.input_folder, args.output_folder, args.n_frames_per_folder)
 
-# python divide_frames_to_folders.py --input_folder inference/data_test --output_folder inference/split_data --n_frames_per_folder 6
+# python divide_frames_to_folders.py --input_folder inference/data/fish --output_folder inference/data/test200 --n_frames_per_folder 200

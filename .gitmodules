@@ -1,3 +1,6 @@
 [submodule "base"]
 	path = base
 	url = https://github.com/mega-sam/base.git
+[submodule "cotracker3"]
+	path = cotracker3
+	url = https://github.com/hhplinh/co-tracker
