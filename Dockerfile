@@ -16,6 +16,7 @@ ENV TORCH_NVCC_FLAGS="-w"
 ENV CFLAGS="-w"
 ENV CXXFLAGS="-w"
 ENV USE_NINJA=1
+ENV PYTORCH_ALLOC_CONF=expandable_segments:True
 
 # 2. Add CUDA binaries to PATH
 ENV PATH=${CUDA_HOME}/bin:${PATH}
