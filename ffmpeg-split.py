@@ -100,13 +100,16 @@ def split_by_seconds(filename, split_length, output_dir=None, vcodec="libx264", 
     if split_length and split_length <= 0:
         print("Split length can't be 0")
         raise SystemExit
-
+    
     if not video_length:
         video_length = get_video_length(filename)
-    split_count = ceildiv(video_length, split_length)
-    if split_count == 1:
-        print("Video length is less then the target split length.")
-        raise SystemExit
+
+    # if not video_length:
+    #     video_length = get_video_length(filename)
+    # split_count = ceildiv(video_length, split_length)
+    # if split_count == 1:
+    #     print("Video length is less then the target split length.")
+    #     raise SystemExit
     
     second_overlap = kwargs.get("second_overlap", 0)
     
@@ -287,4 +290,4 @@ if __name__ == '__main__':
 
 
 # Example usage:
-# python ffmpeg-split.py -f fish.mp4 -s 5 -o split_vid -O 1 -e '-map 0'
+# python ffmpeg-split.py -f fish.mp4 -s 5 -o split_vid_no_ov -e '-map 0'
