@@ -8,7 +8,7 @@ import math
 import os
 import shlex
 import subprocess
-from optparse import OptionParser
+import argparse
 
 
 def split_by_manifest(filename, manifest, output_dir=None, vcodec="copy", acodec="copy",
@@ -29,7 +29,6 @@ def split_by_manifest(filename, manifest, output_dir=None, vcodec="copy", acodec
         print("File does not exist: %s" % manifest)
         raise SystemExit
 
-    # Ensure the output directory exists
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -103,13 +102,6 @@ def split_by_seconds(filename, split_length, output_dir=None, vcodec="libx264", 
     
     if not video_length:
         video_length = get_video_length(filename)
-
-    # if not video_length:
-    #     video_length = get_video_length(filename)
-    # split_count = ceildiv(video_length, split_length)
-    # if split_count == 1:
-    #     print("Video length is less then the target split length.")
-    #     raise SystemExit
     
     second_overlap = kwargs.get("second_overlap", 0)
     
@@ -131,31 +123,16 @@ def split_by_seconds(filename, split_length, output_dir=None, vcodec="libx264", 
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-
-    # split_cmd = ["ffmpeg", "-i", filename, "-vcodec", vcodec, "-acodec", acodec] + shlex.split(extra)
-    # try:
-    #     filebase = ".".join(filename.split(".")[:-1])
-    #     fileext = filename.split(".")[-1]
-    # except IndexError as e:
-    #     raise IndexError("No . in filename. Error: " + str(e))
-
     filebase, fileext = os.path.splitext(os.path.basename(filename))
     fileext = fileext[1:] if fileext else "mp4"
 
     for n in range(0, split_count):
-        # split_args = []
-        # if n == 0:
-        #     split_start = 0
-        # else:
-        #     split_start = split_length * n
-
         split_start = n * (split_length - second_overlap)
         
         current_split_length = min(split_length, video_length - split_start)    
 
         output_path = os.path.join(output_dir, f"{filebase}-{n+1}-of-{split_count}.{fileext}") if output_dir else f"{filebase}-{n+1}-of-{split_count}.{fileext}"
 
-        # split_args += ["-ss", str(split_start), "-t", str(split_length), output_path]
         full_cmd = [
             "ffmpeg",
             "-ss", str(split_start), 
@@ -172,117 +149,50 @@ def split_by_seconds(filename, split_length, output_dir=None, vcodec="libx264", 
 
 
 def main():
-    parser = OptionParser()
-
-    parser.add_option("-f", "--file",
-                      dest="filename",
-                      help="File to split, for example sample.avi",
-                      type="string",
-                      action="store"
-                      )
-    parser.add_option("-s", "--split-size",
-                      dest="split_length",
-                      help="Split or chunk size in seconds, for example 10",
-                      type="int",
-                      action="store"
-                      )
-    parser.add_option("-c", "--split-chunks",
-                      dest="split_chunks",
-                      help="Number of chunks to split to",
-                      type="int",
-                      action="store"
-                      )
-    parser.add_option("-S", "--split-filesize",
-                      dest="split_filesize",
-                      help="Split or chunk size in bytes (approximate)",
-                      type="int",
-                      action="store"
-                      )
-    parser.add_option("--filesize-factor",
-                      dest="filesize_factor",
-                      help="with --split-filesize, use this factor in time to"
-                           " size heuristics [default: %default]",
-                      type="float",
-                      action="store",
-                      default=0.95
-                      )
-    parser.add_option("--chunk-strategy",
-                      dest="chunk_strategy",
-                      help="with --split-filesize, allocate chunks according to"
-                           " given strategy (eager or even)",
-                      type="choice",
-                      action="store",
-                      choices=['eager', 'even'],
-                      default='eager'
-                      )
-    parser.add_option("-m", "--manifest",
-                      dest="manifest",
-                      help="Split video based on a json manifest file. ",
-                      type="string",
-                      action="store"
-                      )
-    parser.add_option("-o", "--output-dir",
-                      dest="output_dir",
-                      help="Directory to save split files.",
-                      type="string",
-                      action="store"
-                      )
-    parser.add_option("-O", "--second-overlap",
-                      dest="second_overlap",
-                      help="Number of seconds to overlap between chunks. ",
-                      type="int",
-                      default=0,
-                      action="store"
-                      )
-    parser.add_option("-v", "--vcodec",
-                      dest="vcodec",
-                      help="Video codec to use. ",
-                      type="string",
-                      default="libx264",
-                      action="store"
-                      )
-    parser.add_option("-a", "--acodec",
-                      dest="acodec",
-                      help="Audio codec to use. ",
-                      type="string",
-                      default="aac",
-                      action="store"
-                      )
-    parser.add_option("-e", "--extra",
-                      dest="extra",
-                      help="Extra options for ffmpeg, e.g. '-e -threads 8'. ",
-                      type="string",
-                      default="-map 0",
-                      action="store"
-                      )
-    (options, args) = parser.parse_args()
+    parser = argparse.ArgumentParser(description="Split video files using ffmpeg.")
+    parser.add_argument("-f", "--file", dest="filename", help="File to split, for example sample.avi", type=str)
+    parser.add_argument("-s", "--split-size", dest="split_length", help="Split or chunk size in seconds, for example 10", type=int)
+    parser.add_argument("-c", "--split-chunks", dest="split_chunks", help="Number of chunks to split to", type=int)
+    parser.add_argument("-S", "--split-filesize", dest="split_filesize", help="Split or chunk size in bytes (approximate)", type=int)
+    parser.add_argument("--filesize-factor", dest="filesize_factor", help="with --split-filesize, use this factor in time to size heuristics", type=float, default=0.95)
+    parser.add_argument("--chunk-strategy", dest="chunk_strategy", help="with --split-filesize, allocate chunks according to given strategy (eager or even)", choices=['eager', 'even'], default='eager')
+    parser.add_argument("-m", "--manifest", dest="manifest", help="Split video based on a json manifest file.", type=str)
+    parser.add_argument("-o", "--output-dir", dest="output_dir", help="Directory to save split files.", type=str)
+    parser.add_argument("-O", "--second-overlap", dest="second_overlap", help="Number of seconds to overlap between chunks.", type=int, default=0)
+    parser.add_argument("-v", "--vcodec", dest="vcodec", help="Video codec to use.", type=str, default="libx264")
+    parser.add_argument("-a", "--acodec", dest="acodec", help="Audio codec to use.", type=str, default="aac")
+    parser.add_argument("-e", "--extra", dest="extra", help="Extra options for ffmpeg, e.g. '-e -threads 8'.", type=str, default="-map 0")
+    args = parser.parse_args()
 
     def bailout():
         parser.print_help()
         raise SystemExit
 
-    if not options.filename:
+    if not args.filename:
         bailout()
 
-    if options.manifest:
-        split_by_manifest(**options.__dict__)
+    # Convert args to dict for compatibility
+    options = vars(args)
+
+    if options.get("manifest"):
+        split_by_manifest(**options)
     else:
         video_length = None
-        if not options.split_length:
-            video_length = get_video_length(options.filename)
-            file_size = os.stat(options.filename).st_size
+        if not options.get("split_length"):
+            video_length = get_video_length(options["filename"])
+            file_size = os.stat(options["filename"]).st_size
             split_filesize = None
-            if options.split_filesize:
-                split_filesize = int(options.split_filesize * options.filesize_factor)
-            if split_filesize and options.chunk_strategy == 'even':
-                options.split_chunks = ceildiv(file_size, split_filesize)
-            if options.split_chunks:
-                options.split_length = ceildiv(video_length, options.split_chunks)
-            if not options.split_length and split_filesize:
-                options.split_length = int(split_filesize / float(file_size) * video_length)
-        if not options.split_length:
+            if options.get("split_filesize"):
+                split_filesize = int(options["split_filesize"] * options["filesize_factor"])
+            if split_filesize and options["chunk_strategy"] == 'even':
+                options["split_chunks"] = ceildiv(file_size, split_filesize)
+            if options.get("split_chunks"):
+                options["split_length"] = ceildiv(video_length, options["split_chunks"])
+            if not options.get("split_length") and split_filesize:
+                options["split_length"] = int(split_filesize / float(file_size) * video_length)
+        if not options.get("split_length"):
             bailout()
-        split_by_seconds(video_length=video_length,**options.__dict__)
+        split_by_seconds(video_length=video_length, **options)
 
 
 if __name__ == '__main__':
