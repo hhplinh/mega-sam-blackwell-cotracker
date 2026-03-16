@@ -158,7 +158,7 @@ def main():
     parser.add_argument("--chunk-strategy", dest="chunk_strategy", help="with --split-filesize, allocate chunks according to given strategy (eager or even)", choices=['eager', 'even'], default='eager')
     parser.add_argument("-m", "--manifest", dest="manifest", help="Split video based on a json manifest file.", type=str)
     parser.add_argument("-o", "--output-dir", dest="output_dir", help="Directory to save split files.", type=str)
-    parser.add_argument("-O", "--second-overlap", dest="second_overlap", help="Number of seconds to overlap between chunks.", type=int, default=0)
+    parser.add_argument("-O", "--second-overlap", dest="second_overlap", help="Number of seconds to overlap between chunks.", type=int, default=0) # Uppercase of o
     parser.add_argument("-v", "--vcodec", dest="vcodec", help="Video codec to use.", type=str, default="libx264")
     parser.add_argument("-a", "--acodec", dest="acodec", help="Audio codec to use.", type=str, default="aac")
     parser.add_argument("-e", "--extra", dest="extra", help="Extra options for ffmpeg, e.g. '-e -threads 8'.", type=str, default="-map 0")
