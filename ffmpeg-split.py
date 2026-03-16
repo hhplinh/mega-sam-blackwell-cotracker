@@ -42,8 +42,8 @@ def split_by_manifest(filename, manifest, output_dir=None, vcodec="copy", acodec
             print("Format not supported. File must be a csv or json file")
             raise SystemExit
 
-        split_cmd = ["ffmpeg", "-i", filename, "-vcodec", vcodec,
-                     "-acodec", acodec, "-y"] + shlex.split(extra)
+        # frame-accurate slicing: re-encode, -ss/-t after -i, add -avoid_negative_ts make_zero
+        split_cmd = ["ffmpeg", "-y", "-i", filename, "-vcodec", "libx264", "-acodec", "aac", "-avoid_negative_ts", "make_zero"] + shlex.split(extra)
         try:
             fileext = filename.split(".")[-1]
         except IndexError as e:
@@ -62,8 +62,7 @@ def split_by_manifest(filename, manifest, output_dir=None, vcodec="copy", acodec
 
                 output_path = os.path.join(output_dir, filebase + "." + fileext) if output_dir else filebase + "." + fileext
 
-                split_args += ["-ss", str(split_start), "-t",
-                               str(split_length), output_path]
+                split_args += ["-ss", str(split_start), "-t", str(split_length), output_path]
                 print("########################################################")
                 print("About to run: " + " ".join(split_cmd + split_args))
                 print("########################################################")
@@ -119,7 +118,6 @@ def split_by_seconds(filename, split_length, output_dir=None, vcodec="libx264", 
         print("Video length is less than or equal to the target split length.")
         raise SystemExit
 
-    # Ensure the output directory exists
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
@@ -128,24 +126,26 @@ def split_by_seconds(filename, split_length, output_dir=None, vcodec="libx264", 
 
     for n in range(0, split_count):
         split_start = n * (split_length - second_overlap)
-        
-        current_split_length = min(split_length, video_length - split_start)    
+        current_split_length = min(split_length, video_length - split_start)
 
         output_path = os.path.join(output_dir, f"{filebase}-{n+1}-of-{split_count}.{fileext}") if output_dir else f"{filebase}-{n+1}-of-{split_count}.{fileext}"
 
+        # frame-accurate slicing: re-encode, -ss/-t after -i, add -avoid_negative_ts make_zero
         full_cmd = [
             "ffmpeg",
-            "-ss", str(split_start), 
-            "-i", filename, 
-            "-t", str(current_split_length),
-            "-vcodec", vcodec, 
-            "-acodec", acodec
+            "-y",
+            "-i", filename,
+            "-vcodec", "libx264",
+            "-acodec", "aac",
+            "-avoid_negative_ts", "make_zero",
+            "-ss", str(split_start),
+            "-t", str(current_split_length)
         ] + shlex.split(extra) + [output_path]
-        
-        print("About to run: " + " ".join(full_cmd))
-        subprocess.check_output(full_cmd)
-        
-    print("Saved %d split files to %s" % (split_count, output_dir if output_dir else os.getcwd()))
+
+        print("About to run:", shlex.join(full_cmd))
+        subprocess.run(full_cmd, check=True)
+
+    print(f"Saved {split_count} split files to {output_dir or os.getcwd()}")
 
 
 def main():
@@ -171,7 +171,6 @@ def main():
     if not args.filename:
         bailout()
 
-    # Convert args to dict for compatibility
     options = vars(args)
 
     if options.get("manifest"):
@@ -200,4 +199,4 @@ if __name__ == '__main__':
 
 
 # Example usage:
-# python ffmpeg-split.py -f fish.mp4 -s 5 -o split_vid_no_ov -e '-map 0'
+# python ffmpeg-split.py -f fish.mp4 -s 3 -o split_vid_no_ov -e '-map 0'
