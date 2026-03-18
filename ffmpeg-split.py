@@ -122,7 +122,7 @@ def split_by_seconds(filename, split_length, output_dir=None, vcodec="libx264", 
         os.makedirs(output_dir)
     
     filebase, fileext = os.path.splitext(os.path.basename(filename))
-    fileext = fileext[1:] if fileext else "mp4"
+    fileext = fileext[1:] if fileext and len(fileext) > 1 else "mp4"
 
     for n in range(0, split_count):
         split_start = n * (split_length - second_overlap)

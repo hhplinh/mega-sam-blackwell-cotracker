@@ -2,6 +2,7 @@ import os
 import argparse
 import subprocess
 import shlex
+import tempfile
 
 
 VIDEO_EXTENSIONS = (".mp4", ".mov", ".mkv", ".avi")
@@ -39,22 +40,30 @@ def merge_folder(folder_path, output_path):
     if len(videos) == 0:
         raise ValueError(f"No video files found in {folder_path}")
 
-    if len(videos) % 2 != 0:
-        raise ValueError("Number of videos in folder must be even.")
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tf:
+        for v in videos:
+            abs_path = os.path.abspath(os.path.join(folder_path, v))
+            tf.write(f"file '{abs_path}'\n")
+        filelist_path = tf.name
 
-    os.makedirs(output_path, exist_ok=True)
+    if os.path.isdir(output_path):
+        os.makedirs(output_path, exist_ok=True)
+        out_file = os.path.join(output_path, "merged_all.mp4")
+    else:
+        out_file = output_path
 
-    for i in range(0, len(videos), 2):
-        video1 = os.path.join(folder_path, videos[i])
-        video2 = os.path.join(folder_path, videos[i + 1])
-
-        output_file = os.path.join(
-            output_path,
-            f"merged_{i // 2:03d}.mp4"
-        )
-
-        print(f"Merging:\n  {video1}\n  {video2}\n -> {output_file}")
-        merge_videos(video1, video2, output_file)
+    cmd = [
+        "ffmpeg",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", filelist_path,
+        "-c", "copy",
+        "-y",
+        out_file
+    ]
+    print(f"Concatenating {len(videos)} videos into {out_file}")
+    run_ffmpeg(cmd)
+    os.remove(filelist_path)
 
 
 if __name__ == "__main__":
@@ -118,4 +127,4 @@ if __name__ == "__main__":
 
 # Example usage:
 # python merge_videos.py --merge_pair_mode --video1_path video1.mp4 --video2_path video2.mp4 --output_path merged_video.mp4
-# python merge_videos.py --merge_folder_mode --inp_folder_path output/split_vid_no_ov_res --output_path output/split_vid_no_ov_res/merged
+# python merge_videos.py --merge_folder_mode --inp_folder_path output1/split_vid_res --output_path output1/merged/merge1.mp4
