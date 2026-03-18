@@ -99,14 +99,14 @@ Example usage:
 python automate_split_track_merge.py \
   --video_path fish.mp4 \
   --checkpoint checkpoints/scaled_online.pth \
-  --split_size 3 \
+  --split_size 1 \
   --grid_size 50 \
   --grid_query_frame 0 \
-  --work_dir output1 \
-  --output_merge_video_path output1/merged/merged3s.mp4
+  --work_dir output1s \
+  --output_merge_video_path output1s/merged/merged1s.mp4
 
 This will:
-1. Split input video into 3s(split_size) chunks in output/split_vid
+1. Split input video into 1s(split_size) chunks in output/split_vid
 2. Run cotracker3/online_demo.py on each chunk, saving results to output/split_vid_res
 3. Merge the processed videos into output/merged
 """

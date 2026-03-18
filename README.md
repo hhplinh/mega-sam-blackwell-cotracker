@@ -1,3 +1,41 @@
+This project is a modified clone of MegaSaM, with upgraded code to run on Blackwell architecture and CoTracker3 for 2D correspondence. 
+
+To debug the performance of CoTracker3, I coded a pipeline to have CoTracker reinitialize the tracking grid every 1 second. The pipeline file is `automate_split_track_merge.py`
+
+### Commands
+Example usage of the pipeline file:
+```
+python automate_split_track_merge.py   --video_path fish.mp4   --checkpoint checkpoints/scaled_online.pth   --split_size 1   --grid_size 50   --grid_query_frame 0   --work_dir output1s   --output_merge_video_path output1s/merged/merged1s.mp4
+```
+This will:
+1. Split input video into 1s chunks in output/split_vid (detail code in `ffmpeg-split.py`)
+2. Run cotracker3/online_demo.py on each chunk, saving results to output/split_vid_res (detail code in `online_demo.py`)
+3. Merge the processed videos into output/merged (detail code in `merge_videos.py`)
+
+### Usage Arguments
+
+The automated pipeline handles the **split → online_demo → merge** workflow using the following arguments:
+
+* **`--video_path`** (Required): Path to the input video file.
+* **`--checkpoint`** (Required): Path to the model checkpoint.
+* **`--work_dir`**: Directory for intermediate and output files (Default: `output`).
+* **`--output_merge_video_path`**: Path to save the final merged video (Default: `output/merged/final_merged.mp4`).
+
+
+#### Script Paths
+* **`--ffmpeg_split_path`**: Path to the `ffmpeg-split.py` script (Default: `ffmpeg-split.py`).
+* **`--online_demo_path`**: Path to the `cotracker3/online_demo.py` script (Default: `cotracker3/online_demo.py`).
+* **`--merge_videos_path`**: Path to the `merge_videos.py` script (Default: `merge_videos.py`).
+
+#### Processing Settings
+* **`--split_size`**: Duration of video segments in seconds (Default: `5`).
+* **`--grid_size`**: Grid size for the online demo processing (Default: `10`).
+* **`--grid_query_frame`**: The specific frame used for the grid query (Default: `0`).
+
+
+---
+
+## Original repo:
 https://github.com/ludekcizinsky/mega-sam
 
 ## About this repository
