@@ -32,6 +32,10 @@ The automated pipeline handles the **split → online_demo → merge** workflow 
 * **`--grid_size`**: Grid size for the online demo processing (Default: `10`).
 * **`--grid_query_frame`**: The specific frame used for the grid query (Default: `0`).
 
+## Demo
+
+https://github.com/user-attachments/assets/d62e93d1-e366-4b84-a54f-5361688db9b7
+
 
 ---
 
