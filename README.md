@@ -9,6 +9,8 @@ python automate_split_track_merge.py   --video_path fish.mp4   --checkpoint chec
 ```
 This will:
 1. Split input video into 1s chunks in output/split_vid (detail code in `ffmpeg-split.py`)
+To split the video more accurately to miliseconds, in the code, I let ffmpeg re-encode the videos, mode vcode is libx264, mode acodec is aac. I place -ss and -t option after -i and add -avoid_negative_ts make_zero for timestamp handling.
+
 2. Run cotracker3/online_demo.py on each chunk, saving results to output/split_vid_res (detail code in `online_demo.py`)
 3. Merge the processed videos into output/merged (detail code in `merge_videos.py`)
 
