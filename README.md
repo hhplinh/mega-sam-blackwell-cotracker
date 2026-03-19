@@ -2,6 +2,8 @@ This project is a modified clone of MegaSaM, with upgraded code to run on Blackw
 
 To debug the performance of CoTracker3, I coded a pipeline to have CoTracker reinitialize the tracking grid every 1 second. The pipeline file is `automate_split_track_merge.py`
 
+Weights: https://drive.google.com/drive/folders/1V9Ela6ZxTYrXjnjmHKdBUZ3Aq0816CST?usp=sharing
+
 ### Commands
 Example usage of the pipeline file:
 ```
