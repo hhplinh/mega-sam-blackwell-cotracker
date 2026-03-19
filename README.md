@@ -1,3 +1,5 @@
+Note: currently gitignoring all folder starting with "output", regex "output*/"
+
 This project is a modified clone of MegaSaM, with upgraded code to run on Blackwell architecture and CoTracker3 for 2D correspondence. 
 
 To debug the performance of CoTracker3, I coded a pipeline to have CoTracker reinitialize the tracking grid every n second(s), set in command line. The pipeline file is `automate_split_track_merge.py`
