@@ -20,8 +20,6 @@ This will:
 3. Merge the processed videos into output/merged
 """
 
-# Pipeline: split video -> run online_demo -> merge results
-
 def run_cmd(cmd):
     print("About to run:", shlex.join(cmd))
     subprocess.run(cmd, check=True)
@@ -75,10 +73,10 @@ def pipeline(ffmpeg_split_path, online_demo_path, merge_videos_path, inp_video_p
     os.makedirs(megasam_dir, exist_ok=True)
     os.makedirs(vis_overlay_dir, exist_ok=True)
 
-    # 1. Split video
+    # Split video
     split_video(ffmpeg_split_path, inp_video_path, split_size, split_dir)
 
-    # 2. Run processing based on output_type
+    # Processing
     for fname in sorted(os.listdir(split_dir)):
         if not fname.lower().endswith(".mp4"):
             continue
@@ -93,11 +91,9 @@ def pipeline(ffmpeg_split_path, online_demo_path, merge_videos_path, inp_video_p
         video_output = os.path.join(vis_overlay_dir, f"{split_name}_motion_overlay.mp4")
         os.makedirs(output_dir, exist_ok=True)
 
-        # Only run online_demo if output_type is cotracker or both
         if output_type in ["cotracker", "both"]:
             run_online_demo(online_demo_path, split_path, checkpoint, grid_size, grid_query_frame, out_video, out_track)
 
-        # Only run MegaSaM visualization if output_type is megasam or both
         if output_type in ["megasam", "both"]:
             frame_files = [f for f in os.listdir(frame_dir) if f.startswith('frame_') and f.endswith('.jpg')]
             max_frame_idx = 0
@@ -122,7 +118,7 @@ def pipeline(ffmpeg_split_path, online_demo_path, merge_videos_path, inp_video_p
             ]
             run_cmd(cmd)
 
-    # 4. Merge videos based on output_type
+    # Merge videos
     merged_megasam_dir = os.path.join(work_dir, "merged_megasam")
     os.makedirs(merged_megasam_dir, exist_ok=True)
     if output_type == "cotracker":
