@@ -106,8 +106,8 @@ fi
 ffmpeg -hide_banner -loglevel error -y \
   -i "$INPUT_VIDEO" \
   -vf "$VF_FILTER" \
-  -start_number 0 \
-  "${OUTPUT_DIR%/}/%05d.jpg"
+  -start_number 1 \
+  "${OUTPUT_DIR%/}/frame_%06d.jpg"
 
 echo "Done. Extracted frames at ${FPS_ARG} fps to: $OUTPUT_DIR"
 if [[ "$USE_SCALE" -eq 0 ]]; then

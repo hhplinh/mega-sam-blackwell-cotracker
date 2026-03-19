@@ -97,6 +97,10 @@ def pipeline(ffmpeg_split_path, online_demo_path, merge_videos_path, inp_video_p
         video_output = os.path.join(vis_overlay_dir, f"{split_name}_motion_overlay.mp4")
         os.makedirs(output_dir, exist_ok=True)
 
+        # megasam_script = "run_megasam.sh"
+        # if output_type == "overlay":
+        #     cmd_megasam = ["bash", megasam_script, frame_dir, megasam_split_dir]
+        #     run_cmd(cmd_megasam)
         if output_type in ["cotracker-point", "overlay"]:
             run_online_demo(online_demo_path, split_path, checkpoint, grid_size, grid_query_frame, out_video, out_track)
 
