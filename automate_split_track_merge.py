@@ -75,7 +75,7 @@ if __name__ == "__main__":
     parser.add_argument("--merge_videos_path", type=str, default="merge_videos.py", help="Path to merge_videos.py script")
     parser.add_argument("--video_path", type=str, required=True, help="Input video file path")
     parser.add_argument("--checkpoint", type=str, required=True, help="Path to model checkpoint")
-    parser.add_argument("--split_size", type=int, default=5, help="Split size in seconds")
+    parser.add_argument("--split_size", type=int, default=1, help="Split size in second(s)")
     parser.add_argument("--grid_size", type=int, default=10, help="Grid size for online_demo")
     parser.add_argument("--grid_query_frame", type=int, default=0, help="Grid query frame for online_demo")
     parser.add_argument("--work_dir", type=str, default="output", help="Working directory for intermediate and output files")
