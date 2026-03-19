@@ -9,7 +9,14 @@ Weights: https://drive.google.com/drive/folders/1V9Ela6ZxTYrXjnjmHKdBUZ3Aq0816CS
 ### Commands
 Example usage of the pipeline file:
 ```
-python automate_split_track_merge.py   --video_path fish.mp4   --checkpoint checkpoints/scaled_online.pth   --split_size 1   --grid_size 50   --grid_query_frame 0   --work_dir output1s   --output_merge_video_path output1s/merged/merged1s.mp4
+python automate_split_track_merge.py \
+  --inp_video_path fish.mp4 \
+  --checkpoint checkpoints/scaled_online.pth \
+  --split_size 1 \
+  --grid_size 50 \
+  --grid_query_frame 0 \
+  --work_dir output1s \
+  --output_type cotracker
 ```
 This will:
 1. Split input video into 1s chunks in output/split_vid (detail code in `ffmpeg-split.py`).
@@ -23,10 +30,10 @@ In `ffmpeg-split.py`). To split the video more accurately to miliseconds, ffmpeg
 
 The automated pipeline handles the **split → online_demo → merge** workflow using the following arguments:
 
-* **`--video_path`** (Required): Path to the input video file.
+* **`--inp_video_path`** (Required): Path to the input video file.
 * **`--checkpoint`** (Required): Path to the model checkpoint.
 * **`--work_dir`**: Directory for intermediate and output files (Default: `output`).
-* **`--output_merge_video_path`**: Path to save the final merged video (Default: `output/merged/final_merged.mp4`).
+* **`--output_type`**: Type of merged video to produce: cotracker, megasam, or both (currently only cotracker).
 
 
 #### Script Paths
