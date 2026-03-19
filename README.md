@@ -33,9 +33,9 @@ The automated pipeline handles the **split → online_demo → merge** workflow 
 * **`--inp_video_path`** (Required): Path to the input video file.
 * **`--checkpoint`** (Required): Path to the model checkpoint.
 * **`--work_dir`**: Directory for intermediate and output files (Default: `output`).
-* **`--output_type`**: Type of merged video to produce: "cotracker-point", "megasam", "cotracker" or "both". 
+* **`--output_type`**: Type of merged video to produce: "cotracker-point", "overlay". 
   * Choose "cotracker-point" for viewing CoTracker with tracking grid reinitialized every n second(s).
-  * "megasam", "cotracker" or "both" are for viewing flow with arrows showing direction and magnitude (currently only support "cotracker").
+  * "overlay" are for viewing flow with arrows showing direction and magnitude (currently only show arrow flow of CoTracker").
 
 
 #### Script Paths
