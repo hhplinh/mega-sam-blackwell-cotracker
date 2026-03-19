@@ -29,7 +29,7 @@ python visualize_motion/visualize_motion_cli.py \
     --end_frame 30 \
     --delta 1 \
     --output_dir output_motion_overlay \
-    --video_output motion_overlay.mp4
+    --video_output output_motion_overlay/motion_overlay.mp4
 
 The CoTracker .pt file must be a dict with keys 'tracks' ([T, N, 2]) and 'visibility' ([T, N, 1]).
 """
@@ -51,7 +51,7 @@ def main():
     parser.add_argument("--end_frame", type=int, required=True, help="End frame index (inclusive)")
     parser.add_argument("--delta", type=int, default=1, help="Step to next frame. Motion is visualized from frame t to frame t+delta. Default: 1 (next frame).")
     parser.add_argument("--output_dir", type=str, default="output_motion_overlay", help="Directory to save overlay PNGs for each frame.")
-    parser.add_argument("--video_output", type=str, default="motion_overlay.mp4", help="Path to save the combined video.")
+    parser.add_argument("--video_output", type=str, default="output_motion_overlay/motion_overlay.mp4", help="Path to save the combined video.")
     parser.add_argument("--flow_stride", type=int, default=12, help="Pixel stride for MegaSaM arrows.")
     parser.add_argument("--point_stride", type=int, default=1, help="Stride for CoTracker points.")
     parser.add_argument("--min_mag", type=float, default=1.0, help="Minimum arrow magnitude (in pixels) to draw.")
@@ -69,11 +69,27 @@ def main():
 
     frame_indices = list(range(args.start_frame, args.end_frame + 1))
     image_paths = []
+    # Debug visibility tensor shape
+    print(f"DEBUG: cotracker_visibility shape: {cotracker_visibility.shape}, ndim: {cotracker_visibility.ndim}")
     num_vis_frames = cotracker_visibility.shape[1] if cotracker_visibility.ndim == 3 else cotracker_visibility.shape[0]
+    num_vis_batches = cotracker_visibility.shape[0] if cotracker_visibility.ndim == 3 else None
+    print(f"DEBUG: num_vis_frames: {num_vis_frames}, num_vis_batches: {num_vis_batches}")
     for t in frame_indices:
-        if (t + args.delta) >= num_vis_frames:
-            print(f"Skipping frame {t}: t+delta ({t + args.delta}) exceeds visibility tensor frame count ({num_vis_frames})")
-            continue
+        # Add bounds check for visibility tensor
+        if cotracker_visibility.ndim == 3:
+            if t >= cotracker_visibility.shape[1]:
+                print(f"Skipping frame {t}: t exceeds visibility tensor frame count ({cotracker_visibility.shape[1]})")
+                continue
+            if (t + args.delta) >= cotracker_visibility.shape[1]:
+                print(f"Skipping frame {t}: t+delta ({t + args.delta}) exceeds visibility tensor frame count ({cotracker_visibility.shape[1]})")
+                continue
+        else:
+            if t >= cotracker_visibility.shape[0]:
+                print(f"Skipping frame {t}: t exceeds visibility tensor frame count ({cotracker_visibility.shape[0]})")
+                continue
+            if (t + args.delta) >= cotracker_visibility.shape[0]:
+                print(f"Skipping frame {t}: t+delta ({t + args.delta}) exceeds visibility tensor frame count ({cotracker_visibility.shape[0]})")
+                continue
         try:
             frame_path = find_frame(args.frame_dir, t)
             image_t = cv2.cvtColor(cv2.imread(frame_path), cv2.COLOR_BGR2RGB)

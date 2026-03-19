@@ -71,6 +71,7 @@ def visualize_motion(
     # CoTracker: draw arrows from t to t+delta
     tracks = cotracker_tracks
     vis = cotracker_visibility
+    # Squeeze batch dimension if present
     if tracks.ndim == 4:
         tracks = tracks[0]
     if vis.ndim == 4:
@@ -82,10 +83,16 @@ def visualize_motion(
     pts_t1 = tracks[t + delta]
     print("DEBUG: pts_t shape:", pts_t.shape)
     print("DEBUG: pts_t1 shape:", pts_t1.shape)
-    print("DEBUG: vis[t] shape:", vis[t].shape)
-    print("DEBUG: vis[t][0, :] shape:", vis[t][0, :].shape)
-    vis_t = vis[t][0, :] > 0.5
-    vis_t1 = vis[t + delta][0, :] > 0.5
+    # Fix visibility indexing: use vis[:, t, :] for frame dimension
+    if vis.ndim == 3:
+        # If shape is [batch, frame, points], use batch 0
+        vis_t = vis[0, t, :] > 0.5
+        vis_t1 = vis[0, t + delta, :] > 0.5
+        print(f"DEBUG: vis[0, t, :].shape: {vis[0, t, :].shape}, vis[0, t+delta, :].shape: {vis[0, t+delta, :].shape}")
+    else:
+        vis_t = vis[t][0, :] > 0.5
+        vis_t1 = vis[t + delta][0, :] > 0.5
+        print(f"DEBUG: vis[t][0, :].shape: {vis[t][0, :].shape}, vis[t+delta][0, :].shape: {vis[t+delta][0, :].shape}")
     print("DEBUG: vis_t shape:", vis_t.shape, "vis_t1 shape:", vis_t1.shape, "vis_t type:", type(vis_t), "vis_t1 type:", type(vis_t1))
     visible = vis_t & vis_t1
     print("DEBUG: visible shape:", visible.shape, "visible type:", type(visible))
