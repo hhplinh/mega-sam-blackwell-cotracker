@@ -59,7 +59,6 @@ def visualize_motion(
     Returns:
         Saves overlay PNG to out_path.
     """
-    # Convert tensors to numpy
     if torch.is_tensor(image_t):
         image_t = image_t.cpu().numpy()
     if image_t.dtype != np.uint8:
@@ -83,7 +82,6 @@ def visualize_motion(
     pts_t1 = tracks[t + delta]
     print("DEBUG: pts_t shape:", pts_t.shape)
     print("DEBUG: pts_t1 shape:", pts_t1.shape)
-    # Fix visibility indexing: use vis[:, t, :] for frame dimension
     if vis.ndim == 3:
         # If shape is [batch, frame, points], use batch 0
         vis_t = vis[0, t, :] > 0.5
