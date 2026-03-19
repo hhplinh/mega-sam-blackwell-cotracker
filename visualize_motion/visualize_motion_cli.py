@@ -1,3 +1,12 @@
+import argparse
+import os
+import numpy as np
+import torch
+import cv2
+from visualize_motion import visualize_motion
+import glob
+
+
 """
 visualize_motion_cli.py
 
@@ -5,42 +14,50 @@ Command-line interface for visualize_motion utility.
 
 Inputs:
 - --tracks_path: path to CoTracker .pt file (dict with 'tracks' and 'visibility')
-- --frame_path: path to RGB frame image
+- --frame_dir: directory containing frame images (searches recursively for frame_XXXXXX.jpg)
 - --megasam_dir: path to MegaSaM output folder (per-frame .npz)
 
 Usage example:
-python visualize_motion_cli.py \
-    --tracks_path output1s/split_vid_res/fish-1-of-9_tracks.pt \
-    --frame_path output1s/split_vid_res/fish-1-of-9.png \
+python visualize_motion/visualize_motion_cli.py \
+    --tracks_path output1s_combined/combined_tracks.pt \
+    --frame_dir inference/data/test200 \
     --megasam_dir inference/output/fish/unidepth \
-    --frame_idx 10 \
+    --frame_idx 1 \
     --delta 1 \
     --output motion_overlay.png
 
 The CoTracker .pt file must be a dict with keys 'tracks' ([T, N, 2]) and 'visibility' ([T, N, 1]).
 """
 
-import argparse
-import os
-import numpy as np
-import torch
-import cv2
-from visualize_motion import visualize_motion
+def find_frame(frame_dir, frame_idx):
+    pattern = f"frame_{frame_idx:06d}.jpg"
+    matches = glob.glob(os.path.join(frame_dir, '**', pattern), recursive=True)
+    if not matches:
+        raise FileNotFoundError(f"Frame image not found: {pattern} in {frame_dir}")
+    return matches[0]
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--tracks_path", type=str, required=True, help="Path to CoTracker .pt file (dict with 'tracks' and 'visibility')")
-    parser.add_argument("--frame_path", type=str, required=True, help="Path to RGB frame image")
-    parser.add_argument("--megasam_dir", type=str, required=True, help="Path to MegaSaM output folder (per-frame .npz)")
-    parser.add_argument("--frame_idx", type=int, required=True, help="Frame index t")
-    parser.add_argument("--delta", type=int, default=1, help="Delta to next frame")
-    parser.add_argument("--output", type=str, default="motion_overlay.png", help="Output PNG path")
-    parser.add_argument("--flow_stride", type=int, default=12)
-    parser.add_argument("--point_stride", type=int, default=1)
-    parser.add_argument("--min_mag", type=float, default=1.0)
-    parser.add_argument("--alpha_mask", type=float, default=0.35)
-    parser.add_argument("--suppress_dynamic_arrows", action="store_true")
+    parser.add_argument("--frame_dir", type=str, required=True, help="Directory containing frame images (searches recursively for frame_XXXXXX.jpg)")
+    parser.add_argument("--megasam_dir", type=str, required=True, help="Path to MegaSaM output folder (with *.npz)")
+    parser.add_argument("--frame_idx", type=int, required=True,
+        help="Reference frame index t to visualize. Use 0 for the first frame. Motion is shown from t to t+delta.")
+    parser.add_argument("--delta", type=int, default=1,
+        help="Step to next frame. Motion is visualized from frame t to frame t+delta. Default: 1 (next frame).")
+    parser.add_argument("--output", type=str, default="motion_overlay.png",
+        help="Path to save the combined overlay PNG image. Default: motion_overlay.png.")
+    parser.add_argument("--flow_stride", type=int, default=12,
+        help="Pixel stride for MegaSaM arrows. Higher values reduce clutter by drawing arrows less densely.")
+    parser.add_argument("--point_stride", type=int, default=1,
+        help="Stride for CoTracker points. Higher values downsample the tracked points for clarity. Default: 1 (all points).")
+    parser.add_argument("--min_mag", type=float, default=1.0,
+        help="Minimum arrow magnitude (in pixels) to draw. Arrows with smaller motion are skipped.")
+    parser.add_argument("--alpha_mask", type=float, default=0.35,
+        help="Transparency for MegaSaM mask overlays (if used). Value between 0 (fully transparent) and 1 (opaque).")
+    parser.add_argument("--suppress_dynamic_arrows", action="store_true",
+        help="Suppress MegaSaM arrows in highly dynamic regions to reduce clutter.")
     args = parser.parse_args()
 
     # Load CoTracker tracks and visibility from dict .pt file
@@ -48,8 +65,9 @@ def main():
     cotracker_tracks = cotracker_data['tracks']
     cotracker_visibility = cotracker_data['visibility']
 
-    # Load frame t
-    image_t = cv2.cvtColor(cv2.imread(args.frame_path), cv2.COLOR_BGR2RGB)
+    # Find and load frame image
+    frame_path = find_frame(args.frame_dir, args.frame_idx)
+    image_t = cv2.cvtColor(cv2.imread(frame_path), cv2.COLOR_BGR2RGB)
 
     # Load MegaSaM per-frame .npz
     npz_path = os.path.join(args.megasam_dir, f"frame_{args.frame_idx:06d}.npz")
