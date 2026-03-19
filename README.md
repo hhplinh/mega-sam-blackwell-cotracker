@@ -1,6 +1,6 @@
 This project is a modified clone of MegaSaM, with upgraded code to run on Blackwell architecture and CoTracker3 for 2D correspondence. 
 
-To debug the performance of CoTracker3, I coded a pipeline to have CoTracker reinitialize the tracking grid every 1 second. The pipeline file is `automate_split_track_merge.py`
+To debug the performance of CoTracker3, I coded a pipeline to have CoTracker reinitialize the tracking grid every n second(s), set in command line. The pipeline file is `automate_split_track_merge.py`
 
 ### Commands
 Example usage of the pipeline file:
@@ -31,7 +31,7 @@ The automated pipeline handles the **split → online_demo → merge** workflow 
 * **`--merge_videos_path`**: Path to the `merge_videos.py` script (Default: `merge_videos.py`).
 
 #### Processing Settings
-* **`--split_size`**: Duration of video segments in seconds (Default: `5`).
+* **`--split_size`**: Duration of video segments in seconds (Default: `1`).
 * **`--grid_size`**: Grid size for the online demo processing (Default: `10`).
 * **`--grid_query_frame`**: The specific frame used for the grid query (Default: `0`).
 
