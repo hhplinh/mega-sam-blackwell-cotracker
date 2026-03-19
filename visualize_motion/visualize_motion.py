@@ -75,13 +75,33 @@ def visualize_motion(
         tracks = tracks[0]
     if vis.ndim == 4:
         vis = vis[0]
+    print("DEBUG: tracks shape after squeeze:", tracks.shape)
+    print("DEBUG: vis shape after squeeze:", vis.shape)
+    print("DEBUG: t, delta:", t, delta)
     pts_t = tracks[t]
     pts_t1 = tracks[t + delta]
-    vis_t = vis[t][:, 0] > 0.5
-    vis_t1 = vis[t + delta][:, 0] > 0.5
+    print("DEBUG: pts_t shape:", pts_t.shape)
+    print("DEBUG: pts_t1 shape:", pts_t1.shape)
+    print("DEBUG: vis[t] shape:", vis[t].shape)
+    print("DEBUG: vis[t][0, :] shape:", vis[t][0, :].shape)
+    vis_t = vis[t][0, :] > 0.5
+    vis_t1 = vis[t + delta][0, :] > 0.5
+    print("DEBUG: vis_t shape:", vis_t.shape, "vis_t1 shape:", vis_t1.shape, "vis_t type:", type(vis_t), "vis_t1 type:", type(vis_t1))
     visible = vis_t & vis_t1
+    print("DEBUG: visible shape:", visible.shape, "visible type:", type(visible))
+    if hasattr(visible, 'cpu'):
+        visible_np = visible.cpu().numpy()
+    else:
+        visible_np = np.array(visible)
+    print("DEBUG: sum visible:", np.sum(visible_np))
     pts_t = pts_t[visible][::point_stride]
     pts_t1 = pts_t1[visible][::point_stride]
+    print("DEBUG: pts_t after visible/stride:", pts_t.shape)
+    print("DEBUG: pts_t1 after visible/stride:", pts_t1.shape)
+    if torch.is_tensor(pts_t):
+        pts_t = pts_t.cpu().numpy()
+    if torch.is_tensor(pts_t1):
+        pts_t1 = pts_t1.cpu().numpy()
 
     for p0, p1 in zip(pts_t, pts_t1):
         disp = p1 - p0
