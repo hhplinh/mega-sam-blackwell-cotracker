@@ -16,7 +16,7 @@ python automate_split_track_merge.py \
   --grid_size 50 \
   --grid_query_frame 0 \
   --work_dir output1s \
-  --output_type cotracker
+  --output_type cotracker-point
 ```
 This will:
 1. Split input video into 1s chunks in output/split_vid (detail code in `ffmpeg-split.py`).
@@ -33,7 +33,9 @@ The automated pipeline handles the **split → online_demo → merge** workflow 
 * **`--inp_video_path`** (Required): Path to the input video file.
 * **`--checkpoint`** (Required): Path to the model checkpoint.
 * **`--work_dir`**: Directory for intermediate and output files (Default: `output`).
-* **`--output_type`**: Type of merged video to produce: cotracker, megasam, or both (currently only cotracker).
+* **`--output_type`**: Type of merged video to produce: "cotracker-point", "megasam", "cotracker" or "both". 
+  * Choose "cotracker-point" for viewing CoTracker with tracking grid reinitialized every n second(s).
+  * "megasam", "cotracker" or "both" are for viewing flow with arrows showing direction and magnitude (currently only support "cotracker").
 
 
 #### Script Paths

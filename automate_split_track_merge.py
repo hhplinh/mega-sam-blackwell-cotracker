@@ -12,7 +12,7 @@ python automate_split_track_merge.py \
   --grid_size 50 \
   --grid_query_frame 0 \
   --work_dir output1s \
-  --output_type cotracker
+  --output_type cotracker-point
 
 This will:
 1. Split input video into 1s(split_size) chunks in output/split_vid
@@ -23,6 +23,12 @@ This will:
 def run_cmd(cmd):
     print("About to run:", shlex.join(cmd))
     subprocess.run(cmd, check=True)
+
+def run_video2frames(split_video_path, frame_dir):
+    os.makedirs(frame_dir, exist_ok=True)
+    fps = "1"
+    cmd = ["bash", "video2frames.sh", fps, split_video_path, frame_dir]
+    run_cmd(cmd)
 
 def split_video(ffmpeg_split_path, video_path, split_size, split_dir, extra="-map 0"):
     os.makedirs(split_dir, exist_ok=True)
@@ -91,10 +97,11 @@ def pipeline(ffmpeg_split_path, online_demo_path, merge_videos_path, inp_video_p
         video_output = os.path.join(vis_overlay_dir, f"{split_name}_motion_overlay.mp4")
         os.makedirs(output_dir, exist_ok=True)
 
-        if output_type in ["cotracker", "both"]:
+        if output_type in ["cotracker", "cotracker-point", "both"]:
             run_online_demo(online_demo_path, split_path, checkpoint, grid_size, grid_query_frame, out_video, out_track)
 
         if output_type in ["megasam", "both"]:
+            run_video2frames(split_path, frame_dir)
             frame_files = [f for f in os.listdir(frame_dir) if f.startswith('frame_') and f.endswith('.jpg')]
             max_frame_idx = 0
             for f in frame_files:
@@ -121,7 +128,9 @@ def pipeline(ffmpeg_split_path, online_demo_path, merge_videos_path, inp_video_p
     # Merge videos
     merged_megasam_dir = os.path.join(work_dir, "merged_megasam")
     os.makedirs(merged_megasam_dir, exist_ok=True)
-    if output_type == "cotracker":
+    if output_type == "cotracker-point":
+        merge_videos(merge_videos_path, split_res_dir, merged_dir)
+    elif output_type == "cotracker":
         merge_videos(merge_videos_path, split_res_dir, merged_dir)
     elif output_type == "megasam":
         merge_videos(merge_videos_path, vis_overlay_dir, merged_megasam_dir)
@@ -140,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument("--grid_size", type=int, default=10, help="Grid size for online_demo")
     parser.add_argument("--grid_query_frame", type=int, default=0, help="Grid query frame for online_demo")
     parser.add_argument("--work_dir", type=str, default="output", help="Working directory for intermediate and output files")
-    parser.add_argument("--output_type", type=str, default="both", choices=["cotracker", "megasam", "both"], help="Type of merged video to produce: cotracker, megasam, or both")
+    parser.add_argument("--output_type", type=str, default="both", choices=["cotracker-point", "cotracker", "megasam", "both"], help="Type of merged video to produce: cotracker, megasam, or both")
     args = parser.parse_args()
 
     pipeline(
