@@ -35,7 +35,8 @@ The automated pipeline handles the **split → online_demo → merge** workflow 
 * **`--work_dir`**: Directory for intermediate and output files (Default: `output`).
 * **`--output_type`**: Type of merged video to produce: "cotracker-point", "overlay". 
   * Choose "cotracker-point" for viewing CoTracker with tracking grid reinitialized every n second(s).
-  * "overlay" are for viewing flow with arrows showing direction and magnitude for CoTracker and MegaSaM (this one is not ready yet). The logic is implemented in `visualize_motion/visualize_motion_cli.py`. I plan to concatenate the video together and fix the bug with MegaSaM as currently it outputs arrow flow of CoTracker. I also need to resize the RGB image to match the mask in the flow tracks.
+  * "overlay" are for viewing flow with arrows showing direction and magnitude for CoTracker and MegaSaM (this one is not ready yet).
+    * Originally, I plan to compare the flow of CoTracker and MegaSaM. However, after running the process, I realized that CoTracker scales down the video to account for points moving off-screen, which may create a coordinate mismatch between the tracked points and the original image. Therefore, I want to visualize them first (visualize_motion/visualize_motion_cli.py). I name the visualize mode "overlay" in the pipeline. This would display flow direction and magnitude via arrows. I am currently working on fixing a bug where MegaSaM incorrectly outputs CoTracker’s flow data, and I plan to resize the RGB images to align with the flow track masks before concatenating the videos for a final side-by-side comparison.
 
 
 #### Script Paths
