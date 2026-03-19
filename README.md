@@ -35,7 +35,7 @@ The automated pipeline handles the **split → online_demo → merge** workflow 
 * **`--work_dir`**: Directory for intermediate and output files (Default: `output`).
 * **`--output_type`**: Type of merged video to produce: "cotracker-point", "overlay". 
   * Choose "cotracker-point" for viewing CoTracker with tracking grid reinitialized every n second(s).
-  * "overlay" are for viewing flow with arrows showing direction and magnitude (currently only show arrow flow of CoTracker").
+  * "overlay" are for viewing flow with arrows showing direction and magnitude for CoTracker and MegaSaM (currently only show arrow flow of CoTracker).
 
 
 #### Script Paths
