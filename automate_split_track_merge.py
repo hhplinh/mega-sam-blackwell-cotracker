@@ -3,6 +3,23 @@ import os
 import subprocess
 import shlex
 
+"""
+Example usage:
+python automate_split_track_merge.py \
+  --video_path fish.mp4 \
+  --checkpoint checkpoints/scaled_online.pth \
+  --split_size 1 \
+  --grid_size 50 \
+  --grid_query_frame 0 \
+  --work_dir output1s \
+  --output_merge_video_path output1s/merged/merged1s.mp4
+
+This will:
+1. Split input video into 1s(split_size) chunks in output/split_vid
+2. Run cotracker3/online_demo.py on each chunk, saving results to output/split_vid_res
+3. Merge the processed videos into output/merged
+"""
+
 # Pipeline: split video -> run online_demo -> merge results
 
 def run_cmd(cmd):
@@ -93,20 +110,3 @@ if __name__ == "__main__":
         args.grid_query_frame,
         args.work_dir
     )
-
-"""
-Example usage:
-python automate_split_track_merge.py \
-  --video_path fish.mp4 \
-  --checkpoint checkpoints/scaled_online.pth \
-  --split_size 1 \
-  --grid_size 50 \
-  --grid_query_frame 0 \
-  --work_dir output1s \
-  --output_merge_video_path output1s/merged/merged1s.mp4
-
-This will:
-1. Split input video into 1s(split_size) chunks in output/split_vid
-2. Run cotracker3/online_demo.py on each chunk, saving results to output/split_vid_res
-3. Merge the processed videos into output/merged
-"""
