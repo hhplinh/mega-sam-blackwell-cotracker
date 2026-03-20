@@ -58,7 +58,9 @@ https://github.com/user-attachments/assets/d62e93d1-e366-4b84-a54f-5361688db9b7
 ## Merge track output file
 To merge different track output file of MegaSaM together, run `combine_tracks.py`:
 
-``` python combine_tracks.py --input_dir output1s/split_vid_res --output_path output1s_combined/combined_tracks.pt ```
+``` 
+python combine_tracks.py --input_dir output1s/split_vid_res --output_path output1s_combined/combined_tracks.pt
+```
 
 ---
 
