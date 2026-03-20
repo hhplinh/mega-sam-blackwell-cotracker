@@ -19,9 +19,7 @@ python automate_split_track_merge.py \
   --output_type cotracker-point
 ```
 This will:
-1. Split input video into 1s chunks in output/split_vid (detail code in `ffmpeg-split.py`).
-
-In `ffmpeg-split.py`, to split the video more accurately to miliseconds, ffmpeg re-encodes the videos and places -ss and -t option after -i and add -avoid_negative_ts make_zero for timestamp handling. Mode vcode is libx264, mode acodec is aac.
+1. Split input video into 1s chunks in output/split_vid (detail code in `ffmpeg-split.py`). In `ffmpeg-split.py`, to split the video more accurately to miliseconds, ffmpeg re-encodes the videos and places -ss and -t option after -i and add -avoid_negative_ts make_zero for timestamp handling. Mode vcode is libx264, mode acodec is aac.
 
 2. Run cotracker3/online_demo.py on each chunk, saving results to output/split_vid_res (detail code in `online_demo.py`)
 3. Merge the processed videos into output/merged (detail code in `merge_videos.py`)
