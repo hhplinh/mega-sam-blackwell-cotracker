@@ -53,7 +53,7 @@ The automated pipeline handles the **split → processing → merge** workflow u
 
 ## Demo
 
-https://github.com/user-attachments/assets/d62e93d1-e366-4b84-a54f-5361688db9b7
+https://github.com/user-attachments/assets/c2cd21d7-c4e3-41bf-94e2-a05ec5a9d645
 
 ## Merge track output file
 To merge different track output file of MegaSaM together, run `combine_tracks.py`:
