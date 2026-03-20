@@ -38,7 +38,7 @@ The automated pipeline handles the **split → processing → merge** workflow u
   * "overlay" is for viewing flow with arrows showing direction and magnitude for CoTracker and MegaSaM (this one is not ready yet).
     * Originally, I planned to compare the flow of CoTracker and MegaSaM. However, after running the CoTracker, I realized that it scales down the video to account for points moving off-screen, which I suspect may create a coordinate mismatch between the tracked points and the original image. Therefore, I want to visualize them first (visualize_motion/visualize_motion_cli.py). I name the visualize mode "overlay" in the pipeline. This would display flow direction and magnitude via arrows. 
     * The code in extracting the flow of MegaSaM did not work so I commented it. The logic is that MegaSaM gets motion by using depth and camera movement. It takes a pixel in frame (t), uses depth to figure out where that pixel is in 3D space, moves that 3D point according to how the camera moved to the next frame, then projects it back to the image to see where it lands. The difference between the old and new pixel positions is the motion (flow).
-    * I also want to resize the RGB images to align with the flow track masks before concatenating the videos for a final overlay (or side-by-side if the arrows are too noisy) comparison.
+    * I also want to shrink the RGB images to align with the flow track masks of CoTracker before concatenating the videos for a final overlay (or side-by-side if the arrows are too noisy) comparison.
 
 
 #### Script Paths
