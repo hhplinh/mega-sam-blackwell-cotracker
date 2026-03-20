@@ -28,7 +28,7 @@ In `ffmpeg-split.py`, to split the video more accurately to miliseconds, ffmpeg 
 
 ### Usage Arguments
 
-The automated pipeline handles the **split → online_demo → merge** workflow using the following arguments:
+The automated pipeline handles the **split → processing → merge** workflow using the following arguments:
 
 * **`--inp_video_path`** (Required): Path to the input video file.
 * **`--checkpoint`** (Required): Path to the model checkpoint.
