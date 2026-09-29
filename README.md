@@ -1,14 +1,39 @@
-Note: currently gitignoring all folder starting with "output", regex "output*/"
+# Point-Tracking Consistency Evaluation Framework
 
-This project is a modified clone of MegaSaM, with upgraded code to run on Blackwell architecture and CoTracker3 for 2D correspondence. 
+A visual evaluation and diagnostic framework for analyzing **temporal track consistency** and **trajectory drift** in point-tracking models operating in feature-sparse, low-context scenes.
 
-To debug the performance of CoTracker3, I coded a pipeline to have CoTracker reinitialize the tracking grid every n second(s), set in command line. The pipeline file is `automate_split_track_merge.py`
+This repository combines a modified MegaSaM pipeline with CoTracker3 to make tracking failures easier to reproduce, inspect, and compare. The primary diagnostic mechanism periodically reinitializes CoTracker's tracking grid, then visualizes how the resulting trajectories behave across segment boundaries.
 
-Weights: https://drive.google.com/drive/folders/1V9Ela6ZxTYrXjnjmHKdBUZ3Aq0816CST?usp=sharing
+> **Status:** This project is experimental and under active development. Some comparison and overlay functionality is incomplete.
 
-### Commands
-Example usage of the pipeline file:
-```
+## Overview
+
+Point trackers can appear stable in scenes with rich texture while drifting, losing identity, or accumulating error in scenes with few visual features. This project is designed to expose those failure modes through controlled visual experiments.
+
+The evaluation workflow:
+
+1. Splits a video into fixed-duration segments.
+2. Reinitializes the CoTracker3 grid for each segment.
+3. Tracks points independently within each segment.
+4. Merges the processed segments into a single visualization.
+5. Allows qualitative inspection of discontinuities, temporal inconsistency, and trajectory drift.
+
+The main pipeline is implemented in [`automate_split_track_merge.py`](automate_split_track_merge.py).
+
+## What This Framework Helps Diagnose
+
+- **Temporal consistency:** Whether point trajectories remain smooth and stable over time.
+- **Trajectory drift:** Whether tracks gradually diverge from the visual location of the point.
+- **Reinitialization sensitivity:** How much tracking behavior changes when the point grid is restarted.
+- **Feature-sparse scene behavior:** Failure modes in scenes with limited texture, repetitive appearance, motion blur, or weak visual context.
+- **Segment-boundary artifacts:** Discontinuities introduced when tracking is restarted at regular intervals.
+- **Model and pipeline comparisons:** A foundation for comparing CoTracker3, MegaSaM-derived motion estimates, and future point-tracking models.
+
+## Quick Start
+
+### Example: Reinitialize every second
+
+```bash
 python automate_split_track_merge.py \
   --inp_video_path fish.mp4 \
   --checkpoint checkpoints/scaled_online.pth \
@@ -18,166 +43,193 @@ python automate_split_track_merge.py \
   --work_dir output1s \
   --output_type cotracker-point
 ```
-This will:
-1. Split input video into 1s chunks in output/split_vid (detail code in `ffmpeg-split.py`). In `ffmpeg-split.py`, to split the video more accurately to miliseconds, ffmpeg re-encodes the videos and places -ss and -t option after -i and add -avoid_negative_ts make_zero for timestamp handling. Mode vcode is libx264, mode acodec is aac.
 
-2. Run cotracker3/online_demo.py on each chunk, saving results to output/split_vid_res (detail code in `online_demo.py`)
-3. Merge the processed videos into output/merged (detail code in `merge_videos.py`)
+This command:
 
-### Usage Arguments
+1. Splits `fish.mp4` into one-second chunks under `output1s/split_vid`.
+2. Runs CoTracker3 on each chunk and saves the results under `output1s/split_vid_res`.
+3. Merges the processed chunks under `output1s/merged`.
+4. Produces a visualization showing the effect of periodic tracking-grid reinitialization.
 
-The automated pipeline handles the **split → processing → merge** workflow using the following arguments:
+The split duration is the main experimental control. For example, use `--split_size 0.5`, `--split_size 1`, or `--split_size 5` to compare how frequently reinitialization affects tracking stability.
 
-* **`--inp_video_path`** (Required): Path to the input video file.
-* **`--checkpoint`** (Required): Path to the model checkpoint.
-* **`--work_dir`**: Directory for intermediate and output files (Default: `output`).
-* **`--output_type`**: Type of merged video to produce: "cotracker-point", "overlay". 
-  * Choose "cotracker-point" for viewing CoTracker with tracking grid reinitialized every n second(s).
-  * "overlay" is for viewing flow with arrows showing direction and magnitude for CoTracker and MegaSaM (this one is not ready yet).
-    * Originally, I planned to compare the flow of CoTracker and MegaSaM. However, after running CoTracker, I realize that it scales down the video to account for points moving off-screen, which I suspect may create a coordinate mismatch between the tracked points and the original image. Therefore, I want to visualize them first (`visualize_motion/visualize_motion_cli.py`). I name the visualize mode "overlay" in the pipeline. This would display flow direction and magnitude via arrows. 
-    * The code to extract the flow of MegaSaM did not work so I commented it, in `visualize_motion/visualize_motion.py`. The logic is that MegaSaM gets motion by using depth and camera movement. It takes a pixel in frame (t), uses depth to figure out where that pixel is in 3D space, moves that 3D point according to how the camera moved to the next frame, then projects it back to the image to see where it lands. The difference between the old and new pixel positions is the motion (flow).
-    * I also want to shrink the RGB images to align with the flow track masks of CoTracker before concatenating the videos for a final overlay (or side-by-side if the arrows are too noisy) comparison.
+## Pipeline Components
 
+| Stage | Script | Purpose |
+| --- | --- | --- |
+| Split | `ffmpeg-split.py` | Splits the input video into fixed-duration segments. FFmpeg re-encoding is used to improve timing accuracy at sub-second boundaries. |
+| Track | `cotracker3/online_demo.py` | Runs CoTracker3 on each segment using a newly initialized tracking grid. |
+| Merge | `merge_videos.py` | Combines the processed segment videos into a continuous output. |
+| Track merge | `combine_tracks.py` | Combines track files from multiple processed segments into one `.pt` file. |
 
-#### Script Paths
-* **`--ffmpeg_split_path`**: Path to the `ffmpeg-split.py` script (Default: `ffmpeg-split.py`).
-* **`--online_demo_path`**: Path to the `cotracker3/online_demo.py` script (Default: `cotracker3/online_demo.py`).
-* **`--merge_videos_path`**: Path to the `merge_videos.py` script (Default: `merge_videos.py`).
+## Command-Line Arguments
 
-#### Processing Settings
-* **`--split_size`**: Duration of video segments in seconds (Default: `1`).
-* **`--grid_size`**: Grid size for the online demo processing (Default: `10`).
-* **`--grid_query_frame`**: The specific frame used for the grid query (Default: `0`).
+### Required arguments
+
+- `--inp_video_path`: Path to the input video.
+- `--checkpoint`: Path to the CoTracker3 model checkpoint.
+
+### Experiment and output settings
+
+- `--work_dir`: Directory for intermediate files and final outputs. Default: `output`.
+- `--output_type`: Visualization type:
+  - `cotracker-point`: Displays CoTracker point tracks with periodic grid reinitialization.
+  - `overlay`: Experimental visualization for comparing motion or flow estimates. This mode is not currently complete.
+- `--split_size`: Duration of each video segment in seconds. Default: `1`.
+- `--grid_size`: CoTracker grid size. Default: `10`.
+- `--grid_query_frame`: Frame used to query the initial tracking grid. Default: `0`.
+
+### Script path overrides
+
+These options allow the pipeline to use scripts located outside their default paths:
+
+- `--ffmpeg_split_path`: Path to `ffmpeg-split.py`. Default: `ffmpeg-split.py`.
+- `--online_demo_path`: Path to `cotracker3/online_demo.py`. Default: `cotracker3/online_demo.py`.
+- `--merge_videos_path`: Path to `merge_videos.py`. Default: `merge_videos.py`.
+
+Run the following to inspect all available options:
+
+```bash
+python automate_split_track_merge.py --help
+```
+
+## Weights
+
+Model weights are available here:
+
+[Download checkpoints](https://drive.google.com/drive/folders/1V9Ela6ZxTYrXjnjmHKdBUZ3Aq0816CST?usp=sharing)
+
+Place the required checkpoint at the path supplied with `--checkpoint`.
+
+## Merging Track Files
+
+To combine track outputs generated for multiple video segments:
+
+```bash
+python combine_tracks.py \
+  --input_dir output1s/split_vid_res \
+  --output_path output1s_combined/combined_tracks.pt
+```
 
 ## Demo
 
+The current visualization demonstrates periodic CoTracker grid reinitialization:
+
 https://github.com/user-attachments/assets/c2cd21d7-c4e3-41bf-94e2-a05ec5a9d645
 
-## Merge track output file
-To merge different track output file of MegaSaM together, run `combine_tracks.py`:
+## Output Organization
 
-``` 
-python combine_tracks.py --input_dir output1s/split_vid_res --output_path output1s_combined/combined_tracks.pt
+By default, generated directories begin with `output` and are ignored by Git. A typical run may produce:
+
+```text
+output1s/
+├── split_vid/       # Input video segments
+├── split_vid_res/   # CoTracker outputs for each segment
+└── merged/          # Merged visualization
 ```
 
----
+If you change the work directory, update the commands above accordingly.
 
-## Original repo:
-https://github.com/ludekcizinsky/mega-sam
+## Experimental Overlay Mode
 
-## About this repository
+The `overlay` output type is intended for side-by-side or overlaid comparisons of CoTracker motion and MegaSaM-derived motion. It is currently experimental for the following reasons:
 
-This is a modified version of the original [MegaSaM repository](https://github.com/mega-sam/mega-sam). The goal is to let you run MegaSaM on your own videos (from the wild) as easily as possible. In addition, I have made use of [SpatialVid](https://github.com/NJU-3DV/SpatialVID)'s visualisation code to make it easier to visualize the results which is based on another great project [viser](https://viser.studio/main/) - so big thanks to the authors of those two projects. 
+- CoTracker may resize the video to account for points moving outside the image bounds.
+- MegaSaM flow extraction is incomplete and currently commented out in `visualize_motion/visualize_motion.py`.
+- RGB frames and CoTracker flow masks may require additional resizing or alignment before they can be compared reliably.
+- Arrow-based flow visualizations can become noisy in low-context scenes.
 
-![MegaSaM Result](assets/demo2.gif)
+The recommended output type for current experiments is `cotracker-point`.
 
-## About MegaSaM
+## Installation
 
-<!-- # 🚧 This repository is still not done and being uploaded, please stand by. 🚧  -->
+This repository is based on MegaSaM and includes code adapted to run on newer NVIDIA architectures, including Blackwell systems. The original MegaSaM pipeline remains available for depth, optical flow, camera motion, and 3D visualization experiments.
 
-[Project Page](https://mega-sam.github.io/index.html) | [Paper](https://arxiv.org/abs/2412.04463)
+### Tested environment
 
-This code accompanies the paper
+The original MegaSaM code was tested with:
 
-**MegaSam: Accurate, Fast and Robust Casual Structure and Motion from Casual
-Dynamic Videos** \
-Zhengqi Li, Richard Tucker, Forrester Cole, Qianqian Wang, Linyi Jin, Vickie Ye,
-Angjoo Kanazawa, Aleksander Holynski, Noah Snavely
+- Python 3.10
+- CUDA 11.8
+- PyTorch 2.0.1
 
-*This is not an officially supported Google product.*
+A Conda environment is recommended.
 
-## Clone
-
-Make sure to clone the repository with the submodules by using:
-`git clone --recursive git@github.com:mega-sam/mega-sam.git`
-
-## Instructions for installing dependencies
-
-### Python Environment
-
-The following codebase was successfully run with Python 3.10, CUDA11.8, and
-Pytorch2.0.1. We suggest installing the library in a virtual environment such as
-Anaconda.
-
-1.  To install main libraries, run:
-
-    ```bash
-    conda env create -f environment.yml
-    ```
-
-2.  To install xformers for UniDepth model, follow the instructions from
-    https://github.com/facebookresearch/xformers. If you encounter any
-    installation issue, we suggest installing it from a prebuilt file. For
-    example, for Python 3.10+Cuda11.8+Pytorch2.0.1, run:
-
-    ```bash
-    conda install https://anaconda.org/xformers/xformers/0.0.22.post7/download/linux-64/xformers-0.0.22.post7-py310_cu11.8.0_pyt2.0.1.tar.bz2
-    ```
-
-3.  Compile the extensions for the camera tracking module from source:
-
-    ```bash
-    cd base; python setup.py install;cd ..
-    ```
-    Note that you need to have properly set `CUDA_HOME` environment variable
-    pointing to your CUDA installation. When you are on cluster, it is often possible to load it as module, e.g. `module load cuda/11.8`. Alternatively, in the above conda env installation step, you have installed CUDA toolkit in the conda env, so you can set 
-
-    ```bash
-    export CUDA_HOME=$(dirname $(dirname $(which nvcc)))
-    ``` 
-    before running the above compilation command. I have only verified the cluster method.
-
-4. Install the viser package for visualizing the results (assuming you are in the root of the cloned repo):
-
-    ```bash
-    pip install plotly
-    pip install -e viser
-    ``` 
-
-### Downloading pretrained checkpoints
-
-1.  Download [DepthAnything checkpoint](https://huggingface.co/spaces/LiheYoung/Depth-Anything/blob/main/checkpoints/depth_anything_vitl14.pth) your predefinned dir, here is my how I downloaded into my scratch dir where I store all pretrained models:
-
-    ```bash
-    wget https://huggingface.co/spaces/LiheYoung/Depth-Anything/resolve/main/checkpoints/depth_anything_vitl14.pth \
-        -O /scratch/izar/cizinsky/pretrained/depth_anything_vitl14.pth
-    ```
-
-2.  Download and include [RAFT checkpoint](https://drive.google.com/drive/folders/1sWDsfuZ3Up38EUQt7-JDTT1HcGHuJgvT). This one is tricky because the link is to gdrive folder. Here is how I have donwloaded again into my scratch folder where I store all pretrained models:
-
-    ```bash
-    python -m pip install -U gdown typing_extensions bs4
-    python -m gdown --folder https://drive.google.com/drive/folders/1sWDsfuZ3Up38EUQt7-JDTT1HcGHuJgvT \
-    -O /scratch/izar/cizinsky/pretrained
-    ``` 
-    Note that I first install `gdown` package to be able to download from gdrive. You can also download the file manually if you prefer but that's too much work.
-
-## Running MegaSaM your own video (in form of folder with frames)
-
-Now, with the installation out of the way, you can run MegaSaM on your own video. Please, first go over the first section of the [run_megasam.sh](run_megasam.sh) script and edit the paths to your liking. I mark clearly what needs to be set and what you can leave as is. Then run:
+### Create the environment
 
 ```bash
-bash run_megasam.sh 
+conda env create -f environment.yml
+conda activate <environment-name>
 ```
 
-This will run the full pipeline and save the results to the `OUT_DIR` you specified in the script. 
-Apart from the intermediate results saved in folders (depth_anything, unidepth, raft_flow, reconstructions), there will be the final output saved as `sgd_cvd_hr.npz` saved at the root of the `OUT_DIR`. You can then visualise the result by running (and pointing to the correct data file):
+### Install xFormers
+
+Install xFormers using the instructions for your PyTorch and CUDA versions. For the original Python 3.10, CUDA 11.8, and PyTorch 2.0.1 environment, a prebuilt package can be installed with:
+
+```bash
+conda install https://anaconda.org/xformers/xformers/0.0.22.post7/download/linux-64/xformers-0.0.22.post7-py310_cu11.8.0_pyt2.0.1.tar.bz2
+```
+
+### Build the camera-tracking extension
+
+Set `CUDA_HOME` to your CUDA installation and compile the extension:
+
+```bash
+export CUDA_HOME=$(dirname $(dirname $(which nvcc)))
+cd base
+python setup.py install
+cd ..
+```
+
+On a cluster, CUDA may need to be loaded first, for example:
+
+```bash
+module load cuda/11.8
+```
+
+### Install visualization dependencies
+
+```bash
+pip install plotly
+pip install -e viser
+```
+
+## MegaSaM Baseline Pipeline
+
+The repository retains the original MegaSaM pipeline for processing videos represented as folders of frames.
+
+Before running it, edit the paths in the first section of [`run_megasam.sh`](run_megasam.sh), then run:
+
+```bash
+bash run_megasam.sh
+```
+
+The pipeline writes intermediate results such as depth, optical flow, and reconstructions to the configured `OUT_DIR`, along with a final `sgd_cvd_hr.npz` result.
+
+To visualize a result with Viser:
 
 ```bash
 python viser/visualize_megasam.py \
-  --data /scratch/izar/cizinsky/multiply-output/preprocessing/data/football_high_res/megasam/sgd_cvd_hr.npz
+  --data /path/to/sgd_cvd_hr.npz
 ```
 
-If you are on VSCode, you can add port forwarding to your ssh session and then open the visualisation in your browser at `localhost:8080` or whatever port you specified.
+When running remotely, forward the Viser port through SSH and open the local address printed by the visualizer, typically `http://localhost:8080`.
 
-## Contact
+## Repository Background
 
-For any questions related to our paper, please send email to zl548@cornell.edu.
+This project is a modified version of the original [MegaSaM repository](https://github.com/mega-sam/mega-sam), with CoTracker3 added for 2D point correspondence and diagnostic experiments on Blackwell-compatible systems.
 
+Original repository:
 
-## Bibtex
+- [ludekcizinsky/mega-sam](https://github.com/ludekcizinsky/mega-sam)
+- [MegaSaM project page](https://mega-sam.github.io/index.html)
+- [MegaSaM paper](https://arxiv.org/abs/2412.04463)
 
-```
+## Citation
+
+If you use the MegaSaM components, please cite:
+
+```bibtex
 @inproceedings{li2024_megasam,
   title     = {MegaSaM: Accurate, Fast and Robust Structure and Motion from Casual Dynamic Videos},
   author    = {Li, Zhengqi and Tucker, Richard and Cole, Forrester and Wang, Qianqian and Jin, Linyi and Ye, Vickie and Kanazawa, Angjoo and Holynski, Aleksander and Snavely, Noah},
@@ -186,15 +238,8 @@ For any questions related to our paper, please send email to zl548@cornell.edu.
 }
 ```
 
-## Copyright
+## License and Attribution
 
-Copyright 2025 Google LLC  
+The original MegaSaM materials are distributed under the licenses described by the upstream project. Please review the upstream repository and included license files before redistributing modified code or model weights.
 
-All software is licensed under the Apache License, Version 2.0 (Apache 2.0); you may not use this file except in compliance with the Apache 2.0 license. You may obtain a copy of the Apache 2.0 license at: https://www.apache.org/licenses/LICENSE-2.0
-
-All other materials are licensed under the Creative Commons Attribution 4.0 International License (CC-BY). You may obtain a copy of the CC-BY license at: https://creativecommons.org/licenses/by/4.0/legalcode
-
-Unless required by applicable law or agreed to in writing, all software and materials distributed here under the Apache 2.0 or CC-BY licenses are distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the licenses for the specific language governing permissions and limitations under those licenses.
-
-This is not an official Google product.
-
+This is not an officially supported Google product.
